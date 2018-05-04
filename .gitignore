@@ -6,4 +6,4 @@ __pycache__
 *.pdb
 *.ipdb
 *.iobj
-
+*.pyperf

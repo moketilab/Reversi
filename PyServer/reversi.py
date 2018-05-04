@@ -134,6 +134,10 @@ class Move(object):
 
 class PlayerBase(object):
     """ Base for Player """
+    def __init__(self, name):
+        self.name = name
+    def GetName(self):
+        return self.name
     def Reset(self, id, board):
         self.id = id
     def GetID(self):
