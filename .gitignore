@@ -1,0 +1,9 @@
+.vs
+__pycache__
+*.exe
+*.vcxproj.user
+*.vcxproj.filters
+*.pdb
+*.ipdb
+*.iobj
+
