@@ -13,11 +13,10 @@ class Move(object):
     """ Move for Reversi """
     FIRST  = FIRST
     SECOND = SECOND
-    def __init__(self, p, x, y, *args, **kwargs):
+    def __init__(self, p, x, y):
         self.player = p
         self.x = x
         self.y = y
-        return super().__init__(*args, **kwargs)
     def __str__(self):
         if(self.player == Move.FIRST):
             rv = "ABCDEFGH"[self.x]+"12345678"[self.y]
@@ -41,9 +40,8 @@ class Board(object):
     FIRST = FIRST
     SECOND = SECOND
     DIR = ((0,1),(0,-1),(1,0),(-1,0),(1,1),(1,-1),(-1,1),(-1,-1))
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         self._BoardInit();
-        return super().__init__(*args, **kwargs)
     #### Public
     def Move(self, move:Move):
         return self._Move(move.GetX(), move.GetY(), move.Me(), move.Enemy())
@@ -136,7 +134,7 @@ class PlayerBase(object):
         self.name = name
     def GetName(self):
         return self.name
-    def Reset(self, id, board):
+    def Reset(self, id, board:Board):
         self.id = id
     def GetID(self):
         return self.id
@@ -144,9 +142,8 @@ class PlayerBase(object):
 
 class Game(object):
     """ Reversi game  """
-    def __init__(self, player1, player2, *args, **kwargs):
+    def __init__(self, player1, player2):
         self.players = (player1, player2)
-        return super().__init__(*args, **kwargs)
     def GamePlay(self, **kwargs):
         """ 
         kw 'DebugPrintAllBoard'  : print board after all moves.
