@@ -27,7 +27,7 @@ public:
 		do
 		{
 			m= Reversi::Move(Random()&7,Random()&7);
-		} while (!b.MovePlayer(m));
+		} while (!b.MoveMine(m));
 		return m;
 	}
 	virtual void GameSet(Reversi::Board b, std::vector<Reversi::Move> moves)

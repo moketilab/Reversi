@@ -17,18 +17,26 @@ namespace Reversi {
 	};
 	struct Board {
 		uint64_t stone;  // 1: set      0: unset
-		uint64_t player; // 1: opponent 0: player
+		uint64_t player; // 1: opponent 0: mine
 		static const uint64_t PID_MINE = 0;
 		static const uint64_t PID_OPPONENT = ~0ULL;
 	public:
 		void Reset();
 		void SetPlayer(Move m);
 		void SetOpponent(Move m);
-		bool MovePlayer(Move m);
+		bool MoveMine(Move m);
 		bool MoveOpponent(Move m);
+		bool MovePlayer(Move m, bool is_my_move)
+		{
+			return is_my_move ? MoveMine(m) : MoveOpponent(m);
+		}
 		bool CanSet(Move m) const;
-		bool CanMovePlayer(Move m) const;
+		bool CanMoveMine(Move m) const;
 		bool CanMoveOpponent(Move m) const;
+		bool CanMovePlayer(Move m, bool is_my_move) const
+		{
+			return is_my_move ? CanMoveMine(m) : CanMoveOpponent(m);
+		}
 		int  Score() const;
 	private:
 		bool MoveBoard(uint64_t base, uint64_t pid, int x, int y);

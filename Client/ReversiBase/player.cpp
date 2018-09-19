@@ -154,7 +154,7 @@ int ReversiPlayerStdioClient::StartClient()
 			do
 			{
 				m = player->GetMove(board, moves);
-				b = board.MovePlayer(m);
+				b = board.MoveMine(m);
 			} while (!b);
 			printf("GMMV:%c%c\n", 'a' + m.GetX(), '1' + m.GetY());
 			fflush(stdout);

@@ -51,7 +51,7 @@ namespace Reversi{
 		stone |= x;
 		player |= x;
 	}
-	bool Board::MovePlayer(Move m)
+	bool Board::MoveMine(Move m)
 	{
 		return MoveBoard(GetBit(m), PID_MINE, m.GetX(), m.GetY());
 	}
@@ -63,7 +63,7 @@ namespace Reversi{
 	{
 		return (stone & GetBit(m)) == 0;
 	}
-	bool Board::CanMovePlayer(Move m) const
+	bool Board::CanMoveMine(Move m) const
 	{
 		return CanMoveBoard(GetBit(m), PID_MINE, m.GetX(), m.GetY());
 	}
