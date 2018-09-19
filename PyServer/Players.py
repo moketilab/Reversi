@@ -7,6 +7,7 @@ PlayerTable={
     "random"        : (lambda *args,**kwargs: RandomPlayer(*args,**kwargs))
     ,"user"         : (lambda *args,**kwargs: UserPlayer(*args,**kwargs))
     ,"simplemonte"  : (lambda *args,**kwargs: SimpleMonteCarloMethodPlayer(*args,**kwargs))
+    ,"stdsvr"       : (lambda *args,**kwargs: StdioServerPlayer(*args,**kwargs))
     }
 
 class RandomPlayer(Reversi.PlayerBase):
@@ -101,3 +102,73 @@ class UserPlayer(Reversi.PlayerBase):
                 return m
             print("Can't Move [{}]".format(m))
 
+
+import subprocess
+
+class StdioServerPlayer(Reversi.PlayerBase):
+    def __init__(self, cmd, *args):
+        self.process = subprocess.Popen(
+            [cmd, *args],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            bufsize=1,
+            universal_newlines=True)
+        self._CmdSend("MTWN:")
+        name = self._CmdRecieve("MTNM")
+        return super().__init__(name)
+    def Close(self):
+        self._CmdSend("MTTM:")
+        self.process.wait()
+    def Reset(self, id, board:Reversi.Board):
+        super().Reset(id, board)
+        self._CmdSend("GMRT:")
+        self._CmdRecieve("GMOK")
+        enemy = Reversi.Enemy(self.id)
+        for x in range(8):
+            for y in range(8):
+                if(board.board[y][x] == self.id):
+                    pos = "abcdefgh"[x]+"12345678"[y]
+                    self._CmdSend("GMSP:{}".format(pos))
+                elif(board.board[y][x] == enemy):
+                    pos = "abcdefgh"[x]+"12345678"[y]
+                    self._CmdSend("GMSE:{}".format(pos))
+        self._CmdSend("GMST:")
+        self._CmdRecieve("GMOK")
+    def GetMove(self, board, moves):
+        for m in moves:
+            pos = "abcdefgh"[m.GetX()]+"12345678"[m.GetY()]
+            self._CmdSend("GMME:{}".format(pos))
+        self._CmdSend("GMRM:")
+        
+        pos = self._CmdRecieve("GMMV")
+        x = "abcdefgh".find(pos[0])
+        y = "12345678".find(pos[1])
+        return Reversi.Move(self.id,x,y)
+    def GameSet(self, score, moves):
+        for m in moves:
+            pos = "abcdefgh"[m.GetX()]+"12345678"[m.GetY()]
+            self._CmdSend("GMME:{}".format(pos))
+
+        if(self.id == Reversi.FIRST):
+            self._CmdSend("GMGS:{0}-{1}".format(score[0],score[1]))
+        else:
+            self._CmdSend("GMGS:{1}-{0}".format(score[0],score[1]))
+        self._CmdRecieve("GMOK")
+
+    def _CmdSend(self, cmd:str):
+        print(cmd, file = self.process.stdin)
+        self.process.stdin.flush()
+    def _CmdRecieve(self, cmd: str):
+        while(1):
+            s = self.process.stdout.readline().rstrip()
+            cs = s.split(':')
+            if(cs[0] == cmd):
+                return cs[1]
+            elif(cs[0] == "DBPT"):
+                print(cs[1])
+            else:
+                raise SystemError("SubProcess command Error")
+
+
+
+        

@@ -14,7 +14,12 @@ argp.add_argument("-l", type=int, default=1)
 
 args = argp.parse_args()
 
-players = [ThisPlayerList[x[0]](*x[1:]) for x in args.p]
+try:
+    players = [ThisPlayerList[x[0]](*x[1:]) for x in args.p]
+except:
+    print("Can't create Players")
+    exit()
+
 if(len(players) == 1):
     players += [ThisPlayerList[x[0]](*x[1:]) for x in args.p]
 WinLoseRecord=[[[0,0,0] for y in players] for x in players] # [1st win, 2nd win, draw]
@@ -67,6 +72,9 @@ for n in range(len(players)):
                       ,*WinLoseRecord[v][n]))
     print()
 
+for p in players:
+    p.Close()
+    
 
 
 

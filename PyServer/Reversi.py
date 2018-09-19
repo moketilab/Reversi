@@ -1,6 +1,5 @@
 
 import copy
-import Reversi
 
 
 FIRST = 1
@@ -132,12 +131,18 @@ class PlayerBase(object):
     """ Base for Player """
     def __init__(self, name):
         self.name = name
+    def Close(self):
+        pass
     def GetName(self):
         return self.name
     def Reset(self, id, board:Board):
         self.id = id
     def GetID(self):
         return self.id
+    def GetMove(self, board:Board, moves):
+        pass
+    def GameSet(self, score, moves):
+        pass
 
 
 class Game(object):
@@ -152,34 +157,48 @@ class Game(object):
         board = Board()
         current = 0
         players = [[FIRST, self.players[0]],[SECOND, self.players[1]]]
-        for p in players:
-            p[1].Reset(p[0],board)
         moves = []
-        while(not board.IsGameEnd()):
-            move = players[current][1].GetMove(copy.deepcopy(board), moves)
-            if(not board.Move(move)):
-                return self.ErrorMove(players[1-current][1], board, move, **kwargs)
-            if('DebugPrintAllBoard' in kwargs.keys()):
-                board.PrintBoard()
-            moves = [move]
-            while(not (board.IsGameEnd() or board.CanMove(players[1-current][0]))):
-                move = players[current][1].GetMove(copy.deepcopy(board), [])
+        for p in players:
+            try:
+                p[1].Reset(p[0],board)
+            except:
+                return self.ErrorMove(p[0],board,**kwargs)
+        try:
+            while(not board.IsGameEnd()):
+                move = players[current][1].GetMove(copy.deepcopy(board), moves)
                 if(not board.Move(move)):
-                    return self.ErrorMove(players[1-current][1], board, move, **kwargs)
+                    raise SystemError("Can't Move");
                 if('DebugPrintAllBoard' in kwargs.keys()):
                     board.PrintBoard()
-                moves += [move]
-            current = 1 - current
-        if('DebugPrintFinalBoard' in kwargs.keys()):
-            board.PrintBoard()
-        return board.Score()
-    def ErrorMove(self, player, board:Board, move:Move, **kwargs):
-        if('ErrorPrint'):
+                moves = [move]
+                while(not (board.IsGameEnd() or board.CanMove(players[1-current][0]))):
+                    move = players[current][1].GetMove(copy.deepcopy(board), [])
+                    if(not board.Move(move)):
+                        raise SystemError("Can't Move");
+                    if('DebugPrintAllBoard' in kwargs.keys()):
+                        board.PrintBoard()
+                    moves += [move]
+                current = 1 - current
+            score = board.Score()
+            if('DebugPrintFinalBoard' in kwargs.keys()):
+                board.PrintBoard()
+        except:
+            score = self.ErrorMove(players[current][0], board, **kwargs)
+        try:
+            players[current][1].GameSet(score,moves)
+        except:
+            pass
+        try:
+            players[1 - current][1].GameSet(score,[])
+        except:
+            pass
+        return score
+    def ErrorMove(self, player, board:Board, **kwargs):
+        if('ErrorPrint' in kwargs.keys()):
             print("Error:")
             board.PrintBoard()
-            print(move)
         stat = board.Score()
-        if(move.Player()==Move.FIRST):
+        if(player == Move.FIRST):
             stat[0] = -1
         else:
             stat[1] = -1
