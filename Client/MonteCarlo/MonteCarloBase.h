@@ -25,4 +25,5 @@ protected:
 	static VecMove FindMoveList(Reversi::Board b, const VecMove& moves);
 	static VecMove FindMoveList(Reversi::Board b, const VecMove& moves, bool is_my_move);
 	static int PlayOut(Reversi::Board b, VecMove rest, bool playerNext = false);
+	static int CalcScore(int x);
 };

@@ -91,3 +91,12 @@ int MonteCarloBase::PlayOut(Reversi::Board b, VecMove rest, bool playerNext)
 		}
 	}
 }
+
+int MonteCarloBase::CalcScore(int x)
+{
+	if (x > 0)
+		return 3;
+	else if (x == 0)
+		return 1;
+	return 0;
+}

@@ -44,14 +44,6 @@ void UniformLv1MonteCarlo::GameSet(Reversi::Board b, std::vector<Reversi::Move> 
 {
 }
 
-int UniformLv1MonteCarlo::CalcScore(int x)
-{
-	if (x > 0)
-		return 3;
-	else if (x == 0)
-		return 1;
-	return 0;
-}
 float UniformLv1MonteCarlo::PlayOutN(Reversi::Board b, Reversi::Move m, int trial, VecMove rest)
 {
 	b.MoveMine(m);

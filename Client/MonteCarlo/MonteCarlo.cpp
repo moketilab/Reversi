@@ -1,5 +1,4 @@
 #include "UniformLv1.h"
-#include "PriorityLV1.h"
 #include "PriorityFixedLvl.h"
 
 #include <string>
@@ -18,7 +17,7 @@ PlayerBase* CreatePlayer(int sample, const std::string player)
 			lvl = 1;
 		return new PriorityFixedLvlMonteCarlo(sample, lvl);
 	}
-	return new PriorityLv1MonteCarlo(sample);
+	return new UniformLv1MonteCarlo(sample);
 
 }
 

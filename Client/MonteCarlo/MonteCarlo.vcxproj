@@ -152,8 +152,8 @@
   <ItemGroup>
     <ClCompile Include="MonteCarlo.cpp" />
     <ClCompile Include="MonteCarloBase.cpp" />
+    <ClCompile Include="PriorityBase.cpp" />
     <ClCompile Include="PriorityFixedLvl.cpp" />
-    <ClCompile Include="PriorityLV1.cpp" />
     <ClCompile Include="UniformLV1.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -162,8 +162,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="PriorityBase.h" />
     <ClInclude Include="PriorityFixedLvl.h" />
-    <ClInclude Include="PriorityLV1.h" />
     <ClInclude Include="UniformLv1.h" />
     <ClInclude Include="MonteCarloBase.h" />
   </ItemGroup>
