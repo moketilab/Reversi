@@ -1,8 +1,6 @@
-﻿
-
-
 #include "UniformLv1.h"
 #include "PriorityLV1.h"
+#include "PriorityFixedLvl.h"
 
 #include <string>
 #include <stdio.h>
@@ -13,7 +11,15 @@ PlayerBase* CreatePlayer(int sample, const std::string player)
 	{
 		return new UniformLv1MonteCarlo(sample);
 	}
+	if (player.substr(0,2) == std::string("LV"))
+	{
+		int lvl = atoi(player.substr(2).c_str());
+		if (lvl < 1)
+			lvl = 1;
+		return new PriorityFixedLvlMonteCarlo(sample, lvl);
+	}
 	return new PriorityLv1MonteCarlo(sample);
+
 }
 
 int main(int argc, char** argv)
@@ -31,5 +37,3 @@ int main(int argc, char** argv)
 	delete player;
 	return ret;
 }
-
-

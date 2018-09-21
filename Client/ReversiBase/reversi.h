@@ -10,9 +10,9 @@ namespace Reversi {
 		Move(int x, int y) { Set(x, y); }
 		Move(const Move& m) :mv(m.mv) {}
 		void Set(int x, int y) { mv = (x & 7) | ((y & 7) << 3); }
-		int  GetX() { return mv & 7; }
-		int  GetY() { return (mv >> 3) & 7; }
-		int  GetXY() { return mv & 63; }
+		int  GetX() const { return mv & 7; }
+		int  GetY() const { return (mv >> 3) & 7; }
+		int  GetXY() const { return mv & 63; }
 		bool operator == (const Move& m)const { return mv == m.mv; }
 	};
 	struct Board {
@@ -45,6 +45,6 @@ namespace Reversi {
 	};
 
 	//DebugFunctions
-	void PrintBoard(Board b,FILE* f=stdout);
+	void PrintBoard(Board b,FILE* f=stdout,int indent=0);
 
 }

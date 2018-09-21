@@ -136,10 +136,12 @@ namespace Reversi{
 	}
 
 	//DebugFunctions
-	void PrintBoard(Board b, FILE* f)
+	void PrintBoard(Board b, FILE* f, int indent)
 	{
+		char space[] = "                                                        ";
+		int  s_len = sizeof(space) - 1;
 		uint64_t tgt = 1;
-		fprintf(f, "  :ABCDEFGH\n");
+		fprintf(f, "%s  :ABCDEFGH\n", space + s_len - indent);
 		for (int y = 0; y < 8; y++)
 		{
 			std::string line;
@@ -157,7 +159,7 @@ namespace Reversi{
 						line += ".";
 				tgt <<= 1;
 			}
-			fprintf(f, " %d:%s\n", y + 1, line.c_str());
+			fprintf(f, "%s %d:%s\n", space + s_len - indent, y + 1, line.c_str());
 		}
 	}
 }

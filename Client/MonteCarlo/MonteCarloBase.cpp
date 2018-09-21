@@ -28,6 +28,15 @@ MonteCarloBase::VecMove MonteCarloBase::FindMoveList(Reversi::Board b, const Vec
 			ret.push_back(*m);
 	return ret;
 }
+MonteCarloBase::VecMove MonteCarloBase::FindMoveList(Reversi::Board b, const VecMove& moves, bool is_my_move)
+{
+	VecMove ret;
+	for (auto m = moves.begin(); m != moves.end(); m++)
+		if (b.CanMovePlayer(*m, is_my_move))
+			ret.push_back(*m);
+	return ret;
+}
+
 int MonteCarloBase::PlayOut(Reversi::Board b, VecMove rest, bool playerNext)
 {
 	bool pass = false;

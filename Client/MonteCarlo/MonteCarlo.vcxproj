@@ -118,12 +118,13 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeaderFile />
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -151,6 +152,7 @@
   <ItemGroup>
     <ClCompile Include="MonteCarlo.cpp" />
     <ClCompile Include="MonteCarloBase.cpp" />
+    <ClCompile Include="PriorityFixedLvl.cpp" />
     <ClCompile Include="PriorityLV1.cpp" />
     <ClCompile Include="UniformLV1.cpp" />
   </ItemGroup>
@@ -160,6 +162,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="PriorityFixedLvl.h" />
     <ClInclude Include="PriorityLV1.h" />
     <ClInclude Include="UniformLv1.h" />
     <ClInclude Include="MonteCarloBase.h" />
