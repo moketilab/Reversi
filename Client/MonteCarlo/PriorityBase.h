@@ -17,11 +17,17 @@ protected:
 		bool                      is_leaf;
 		int                       times;
 		int                       score;
-		double                    current_score;
+		int                       subtree_times;
+		double                    subtree_score;
+		int                       total_times;
+		double                    total_score;
 		std::vector<GameTreeNode> children;
 	public:
 		// constructor
-		GameTreeNode(Reversi::Move _m, Reversi::Board _b, VecMove _rest, bool _is_my_turn) :m(_m), b(_b), rest(_rest), is_my_turn(_is_my_turn), times(0), current_score(0) {}
+		GameTreeNode(Reversi::Move _m, Reversi::Board _b, VecMove _rest, bool _is_my_turn)
+			:m(_m), b(_b), rest(_rest), is_my_turn(_is_my_turn)
+			, times(0), score(0), subtree_times(0), subtree_score(0.0), total_times(0), total_score(0.0)
+		{}
 	public:
 		Reversi::Move PlayOutN(int n, double coeff);
 		// build tree
