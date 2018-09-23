@@ -25,6 +25,26 @@ Reversi::Move PriorityMonteCarloBase::GameTreeNode::PlayOutN(int n, double coeff
 	return bestnode->m;
 }
 
+Reversi::Move PriorityMonteCarloBase::GameTreeNode::PlayOutNWithExpansion(int n, double coeff, int num_to_expand)
+{
+	while (total_times < n)
+	{
+		PlayOutAndUpdateWithExpansion(coeff, num_to_expand);
+	}
+	auto node = children.begin();
+	double best = node->total_score;
+	auto bestnode = node;
+	for (; node != children.end(); node++)
+	{
+		if (node->total_score > best)
+		{
+			best = node->total_score;
+			bestnode = node;
+		}
+	}
+	return bestnode->m;
+}
+
 PriorityMonteCarloBase::GameTreeNode PriorityMonteCarloBase::GameTreeNode::BuildTree(Reversi::Board board, VecMove rest, int depth)
 {
 	GameTreeNode rv(Reversi::Move(0,0), board, rest, true);
@@ -85,12 +105,26 @@ PriorityMonteCarloBase::GameTreeNode PriorityMonteCarloBase::GameTreeNode::Build
 	return rv;
 }
 
+bool PriorityMonteCarloBase::GameTreeNode::ExpandTree()
+{
+	VecMove legal_moves = FindMoveList(b, rest, is_my_turn);
+	assert(legal_moves.size() > 0);
+	for (auto i = legal_moves.begin(); i != legal_moves.end(); i++)
+	{
+		GameTreeNode node = BuildTree(*i, b, rest, 0, is_my_turn);
+		children.push_back(node);
+	}
+	is_leaf = false;
+	UpdateCurrentScore();
+	return true;
+}
+
 void PriorityMonteCarloBase::GameTreeNode::PlayOutAndUpdate(double coeff)
 {
 	if (is_leaf)
 	{
-		score += CalcScore(PlayOut(b, rest, is_my_turn));
 		times++;
+		score += CalcScore(PlayOut(b, rest, is_my_turn));
 		total_score = score / (double)times;
 		total_times = times;
 		return;
@@ -112,6 +146,41 @@ void PriorityMonteCarloBase::GameTreeNode::PlayOutAndUpdate(double coeff)
 		}
 	}
 	bestnode->PlayOutAndUpdate(coeff);
+	UpdateCurrentScore();
+}
+
+void PriorityMonteCarloBase::GameTreeNode::PlayOutAndUpdateWithExpansion(double coeff, int num_to_expand)
+{
+	if (is_leaf)
+	{
+		times++;
+		if ((times >= num_to_expand)&& !rest.empty())
+		{
+			if (ExpandTree())
+				return;
+		}
+		score += CalcScore(PlayOut(b, rest, is_my_turn));
+		total_score = score / (double)times;
+		total_times = times;
+		return;
+	}
+	// not leaf
+	double coeff_score = coeff * sqrt(2 * log(total_times));
+	double sign_score = is_my_turn ? 1.0 : -1.0;
+	auto node = children.begin();
+
+	double best = sign_score * node->total_score + coeff_score / sqrt(node->total_times);
+	GameTreeNode* bestnode = &node[0];
+	for (node++; node != children.end(); node++)
+	{
+		double score = sign_score * node->total_score + coeff_score / sqrt(node->total_times);
+		if (score > best)
+		{
+			best = score;
+			bestnode = &node[0];
+		}
+	}
+	bestnode->PlayOutAndUpdateWithExpansion(coeff, num_to_expand);
 	UpdateCurrentScore();
 }
 

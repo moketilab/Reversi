@@ -30,12 +30,15 @@ protected:
 		{}
 	public:
 		Reversi::Move PlayOutN(int n, double coeff);
+		Reversi::Move PlayOutNWithExpansion(int n, double coeff, int num_to_expand);
 		// build tree
 		static GameTreeNode BuildTree(Reversi::Board board, VecMove rest, int depth);
 	private:
 		// build tree helper
 		static GameTreeNode BuildTree(Reversi::Move m, Reversi::Board b, VecMove rest, int depth, bool my_turn);
+		bool ExpandTree();
 		void PlayOutAndUpdate(double coeff);
+		void PlayOutAndUpdateWithExpansion(double coeff, int num_to_expand);
 		void UpdateCurrentScore();
 	public:
 		void DebugPrint(FILE* f, int indent = 0);
