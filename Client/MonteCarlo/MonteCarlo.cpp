@@ -1,5 +1,6 @@
 #include "UniformLv1.h"
 #include "PriorityFixedLvl.h"
+#include "PriorityDynamicExpand.h"
 
 #include <string>
 #include <stdio.h>
@@ -16,6 +17,13 @@ PlayerBase* CreatePlayer(int sample, const std::string player)
 		if (lvl < 1)
 			lvl = 1;
 		return new PriorityFixedLvlMonteCarlo(sample, lvl);
+	}
+	if (player.substr(0, 3) == std::string("DYN"))
+	{
+		int num_to_expand = atoi(player.substr(3).c_str());
+		if (num_to_expand < 2)
+			num_to_expand = 2;
+		return new PriorityDynamicExpandMonteCarlo(sample, num_to_expand);
 	}
 	return new UniformLv1MonteCarlo(sample);
 

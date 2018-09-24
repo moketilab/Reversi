@@ -153,6 +153,7 @@
     <ClCompile Include="MonteCarlo.cpp" />
     <ClCompile Include="MonteCarloBase.cpp" />
     <ClCompile Include="PriorityBase.cpp" />
+    <ClCompile Include="PriorityDynamicExpand.cpp" />
     <ClCompile Include="PriorityFixedLvl.cpp" />
     <ClCompile Include="UniformLV1.cpp" />
   </ItemGroup>
@@ -163,6 +164,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PriorityBase.h" />
+    <ClInclude Include="PriorityDynamicExpand.h" />
     <ClInclude Include="PriorityFixedLvl.h" />
     <ClInclude Include="UniformLv1.h" />
     <ClInclude Include="MonteCarloBase.h" />

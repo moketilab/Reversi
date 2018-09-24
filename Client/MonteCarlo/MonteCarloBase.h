@@ -17,7 +17,7 @@ private:
 	VecMove rest;
 protected:
 	MonteCarloBase(std::string _name) :name(_name) {}
-private:
+public:
 	virtual std::string GetPlayerName() { return name; }
 protected:
 	const VecMove& ResetRest(const Reversi::Board& b);
