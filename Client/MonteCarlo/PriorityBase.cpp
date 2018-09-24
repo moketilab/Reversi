@@ -154,12 +154,12 @@ void PriorityMonteCarloBase::GameTreeNode::PlayOutAndUpdateWithExpansion(double 
 	if (is_leaf)
 	{
 		times++;
+		score += CalcScore(PlayOut(b, rest, is_my_turn));
 		if ((times >= num_to_expand)&& !rest.empty())
 		{
 			if (ExpandTree())
 				return;
 		}
-		score += CalcScore(PlayOut(b, rest, is_my_turn));
 		total_score = score / (double)times;
 		total_times = times;
 		return;
