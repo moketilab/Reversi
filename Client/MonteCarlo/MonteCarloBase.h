@@ -22,6 +22,7 @@ public:
 protected:
 	const VecMove& ResetRest(const Reversi::Board& b);
 	const VecMove& UpdateRest(const VecMove& moves);
+	const VecMove& UpdateRest(const Reversi::Move& move);
 	static VecMove FindMoveList(Reversi::Board b, const VecMove& moves);
 	static VecMove FindMoveList(Reversi::Board b, const VecMove& moves, bool is_my_move);
 	static int PlayOut(Reversi::Board b, VecMove rest, bool playerNext = false);

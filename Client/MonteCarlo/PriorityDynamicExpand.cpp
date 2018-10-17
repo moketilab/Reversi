@@ -41,6 +41,7 @@ Reversi::Move PriorityDynamicExpandMonteCarlo::GetMove(Reversi::Board b, std::ve
 #ifdef DBG_FILEOUT
 	node.DebugPrint(df);
 #endif
+	UpdateRest(move);
 	return move;
 }
 void PriorityDynamicExpandMonteCarlo::GameSet(Reversi::Board b, std::vector<Reversi::Move> moves)

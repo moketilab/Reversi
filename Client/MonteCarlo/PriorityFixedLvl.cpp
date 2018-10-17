@@ -40,6 +40,7 @@ Reversi::Move PriorityFixedLvlMonteCarlo::GetMove(Reversi::Board b, std::vector<
 #ifdef DBG_FILEOUT
 	node.DebugPrint(df);
 #endif
+	UpdateRest(move);
 	return move;
 }
 void PriorityFixedLvlMonteCarlo::GameSet(Reversi::Board b, std::vector<Reversi::Move> moves)

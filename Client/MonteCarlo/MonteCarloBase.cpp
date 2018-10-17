@@ -20,6 +20,11 @@ const MonteCarloBase::VecMove& MonteCarloBase::UpdateRest(const VecMove& moves)
 		rest.erase(std::find(rest.begin(), rest.end(), *m));
 	return rest;
 }
+const MonteCarloBase::VecMove& MonteCarloBase::UpdateRest(const Reversi::Move& move)
+{
+	rest.erase(std::find(rest.begin(), rest.end(), move));
+	return rest;
+}
 MonteCarloBase::VecMove MonteCarloBase::FindMoveList(Reversi::Board b, const VecMove& moves)
 {
 	VecMove ret;
