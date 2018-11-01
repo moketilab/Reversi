@@ -155,6 +155,8 @@
     <ClCompile Include="PriorityBase.cpp" />
     <ClCompile Include="PriorityDynamicExpand.cpp" />
     <ClCompile Include="PriorityFixedLvl.cpp" />
+    <ClCompile Include="ScoreTestPriorityBase.cpp" />
+    <ClCompile Include="ScoreTestPriorityDynamicExpand.cpp" />
     <ClCompile Include="UniformLV1.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -166,6 +168,8 @@
     <ClInclude Include="PriorityBase.h" />
     <ClInclude Include="PriorityDynamicExpand.h" />
     <ClInclude Include="PriorityFixedLvl.h" />
+    <ClInclude Include="ScoreTestPriorityBase.h" />
+    <ClInclude Include="ScoreTestPriorityDynamicExpand.h" />
     <ClInclude Include="UniformLv1.h" />
     <ClInclude Include="MonteCarloBase.h" />
   </ItemGroup>

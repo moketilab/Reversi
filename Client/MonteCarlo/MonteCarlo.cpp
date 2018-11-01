@@ -1,6 +1,7 @@
 #include "UniformLv1.h"
 #include "PriorityFixedLvl.h"
 #include "PriorityDynamicExpand.h"
+#include "ScoreTestPriorityDynamicExpand.h"
 
 #include <string>
 #include <stdio.h>
@@ -24,6 +25,13 @@ PlayerBase* CreatePlayer(int sample, const std::string player)
 		if (num_to_expand < 2)
 			num_to_expand = 2;
 		return new PriorityDynamicExpandMonteCarlo(sample, num_to_expand);
+	}
+	if (player.substr(0, 3) == std::string("STD"))
+	{
+		int num_to_expand = atoi(player.substr(3).c_str());
+		if (num_to_expand < 2)
+			num_to_expand = 2;
+		return new ScoreTestPriorityDynamicExpandMonteCarlo(sample, num_to_expand);
 	}
 	return new UniformLv1MonteCarlo(sample);
 
