@@ -16,26 +16,33 @@ public:
 protected:
 	class GameTreeNode
 	{
+		struct PlayOutResult
+		{
+			int score;
+			int score_total;
+		};
 		const Reversi::Move       m;
 		const Reversi::Board      b;
 		const VecMove             rest;
 		const bool                is_my_turn;
 		bool                      is_leaf;
-		int                       times;
-		int                       score;
+		std::vector<PlayOutResult> playout_results;
+//		int                       times;
+//		int                       score;
 		struct Score
 		{
-			int                       subtree_times;
-			double                    subtree_score;
-			int                       total_times;
-			double                    total_score;
+			bool                  is_leaf;
+			int                   times;
+			int                   subtree_times;
+			double                subtree_score;
+			int                   total_times;
+			double                total_score;
 		}variety_score[SCORE_METHOD_END];
 		std::vector<GameTreeNode> children;
 	public:
 		// constructor
 		GameTreeNode(Reversi::Move _m, Reversi::Board _b, VecMove _rest, bool _is_my_turn)
 			:m(_m), b(_b), rest(_rest), is_my_turn(_is_my_turn)
-			, times(0), score(0)
 		{}
 	public:
 		Reversi::Move PlayOutN(int n, double coeff, ScoreMethod method = SCORE_METHOD_AVE_MAX);
@@ -45,10 +52,12 @@ protected:
 	private:
 		// build tree helper
 		static GameTreeNode BuildTree(Reversi::Move m, Reversi::Board b, VecMove rest, int depth, bool my_turn);
+		static GameTreeNode CreateNode(Reversi::Move m, Reversi::Board b, VecMove rest, bool my_turn);
 		bool ExpandTree();
+		bool ExpandTree(double coeff, ScoreMethod method);
 		void PlayOutAndUpdate(double coeff, ScoreMethod method);
 		void PlayOutAndUpdateWithExpansion(double coeff, int num_to_expand, ScoreMethod method);
-		void UpdateCurrentScore();
+		void UpdateCurrentScore(ScoreMethod method);
 		void UpdateCurrentScoreAuxAverageMax();
 		void UpdateCurrentScoreAuxTotalAve();
 		const char* GetMethodName(ScoreMethod m);

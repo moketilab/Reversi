@@ -12,8 +12,8 @@
 
 #ifdef DBG_FILEOUT
 namespace {
-	FILE* df = fopen("dynamic.txt", "w");
-	FILE* sf = fopen("score.txt", "w");
+	FILE* df = fopen("log/dynamic.txt", "w");
+	FILE* sf = fopen("log/score.txt", "w");
 }
 #endif
 

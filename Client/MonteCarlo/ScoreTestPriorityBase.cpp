@@ -35,10 +35,15 @@ Reversi::Move ScoreTestPriorityMonteCarloBase::GameTreeNode::PlayOutNWithExpansi
 			for (int m = 0; m < SCORE_METHOD_END; m++)
 				fprintf(fd, "%c%c %5s,", i->m.GetX()+'A', i->m.GetY() + '1', GetMethodName(ScoreMethod(m)));
 		fprintf(fd, "\n");
+		for (auto i = children.begin(); i != children.end(); i++)
+			for (int m = 0; m < SCORE_METHOD_END; m++)
+				fprintf(fd, "%8.5f,", i->variety_score[m].total_score);
+		fprintf(fd, "\n");
 	}
 	while (variety_score[method].total_times < n)
 	{
-		PlayOutAndUpdateWithExpansion(coeff, num_to_expand, method);
+		for (int m = 0; m < SCORE_METHOD_END; m++)
+			PlayOutAndUpdateWithExpansion(coeff, num_to_expand, ScoreMethod(m));
 		if (fd)
 		{
 			for(auto i=children.begin(); i != children.end();i++ )
@@ -74,7 +79,10 @@ ScoreTestPriorityMonteCarloBase::GameTreeNode ScoreTestPriorityMonteCarloBase::G
 		rv.children.push_back(node);
 	}
 	rv.is_leaf = false;
-	rv.UpdateCurrentScore();
+	for (int i = 0; i < SCORE_METHOD_END; i++)
+	{
+		rv.UpdateCurrentScore(ScoreMethod(i));
+	}
 	return rv;
 }
 
@@ -93,12 +101,16 @@ ScoreTestPriorityMonteCarloBase::GameTreeNode ScoreTestPriorityMonteCarloBase::G
 			rest.clear();
 			GameTreeNode rv(m, b, rest, my_turn);
 			rv.is_leaf = true;
-			rv.times = 1;
-			rv.score = CalcScore(b.Score());
+			PlayOutResult result;
+			result.score = CalcScore(b.Score());
+			result.score_total = result.score;
+			rv.playout_results.push_back(result);
 			for (int i = 0; i < SCORE_METHOD_END; i++)
 			{
-				rv.variety_score[i].total_score = rv.score;
-				rv.variety_score[i].total_times = rv.times;
+				rv.variety_score[i].is_leaf     = true;
+				rv.variety_score[i].times       = 1;
+				rv.variety_score[i].total_score = result.score;
+				rv.variety_score[i].total_times = 1;
 			}
 			return rv;
 		}
@@ -107,12 +119,16 @@ ScoreTestPriorityMonteCarloBase::GameTreeNode ScoreTestPriorityMonteCarloBase::G
 	{
 		GameTreeNode rv(m, b, rest, my_turn);
 		rv.is_leaf = true;
-		rv.times = 1;
-		rv.score = CalcScore(PlayOut(b,rest,my_turn));
+		PlayOutResult result;
+		result.score = CalcScore(PlayOut(b, rest, my_turn));
+		result.score_total = result.score;
+		rv.playout_results.push_back(result);
 		for (int i = 0; i < SCORE_METHOD_END; i++)
 		{
-			rv.variety_score[i].total_score = rv.score;
-			rv.variety_score[i].total_times = rv.times;
+			rv.variety_score[i].is_leaf     = true;
+			rv.variety_score[i].times       = 1;
+			rv.variety_score[i].total_score = result.score;
+			rv.variety_score[i].total_times = 1;
 		}
 		return rv;
 	}
@@ -123,7 +139,37 @@ ScoreTestPriorityMonteCarloBase::GameTreeNode ScoreTestPriorityMonteCarloBase::G
 		rv.children.push_back(node);
 	}
 	rv.is_leaf = false;
-	rv.UpdateCurrentScore();
+//	rv.UpdateCurrentScore();
+	for (int i = 0; i < SCORE_METHOD_END; i++)
+	{
+		rv.UpdateCurrentScore(ScoreMethod(i));
+	}
+	return rv;
+}
+
+ScoreTestPriorityMonteCarloBase::GameTreeNode ScoreTestPriorityMonteCarloBase::GameTreeNode::CreateNode(Reversi::Move m, Reversi::Board b, VecMove rest, bool my_turn)
+{
+	b.MovePlayer(m, my_turn);
+	rest.erase(std::find(rest.begin(), rest.end(), m));
+	my_turn = !my_turn;
+	VecMove legal_moves = FindMoveList(b, rest, my_turn);
+	if (legal_moves.size() == 0)
+	{
+		my_turn = !my_turn;
+		legal_moves = FindMoveList(b, rest, my_turn);
+		if (legal_moves.size() == 0)
+			rest.clear();
+	}
+	GameTreeNode rv(m, b, rest, my_turn);
+	rv.is_leaf = true;
+	rv.playout_results.clear();
+	for (int i = 0; i < SCORE_METHOD_END; i++)
+	{
+		rv.variety_score[i].is_leaf = true;
+		rv.variety_score[i].times = 0;
+		rv.variety_score[i].total_score = 0;
+		rv.variety_score[i].total_times = 0;
+	}
 	return rv;
 }
 
@@ -133,25 +179,41 @@ bool ScoreTestPriorityMonteCarloBase::GameTreeNode::ExpandTree()
 	assert(legal_moves.size() > 0);
 	for (auto i = legal_moves.begin(); i != legal_moves.end(); i++)
 	{
-		GameTreeNode node = BuildTree(*i, b, rest, 0, is_my_turn);
+		GameTreeNode node = CreateNode(*i, b, rest, is_my_turn);
 		children.push_back(node);
 	}
 	is_leaf = false;
-	UpdateCurrentScore();
+	return true;
+}
+
+bool ScoreTestPriorityMonteCarloBase::GameTreeNode::ExpandTree(double coeff, ScoreMethod method)
+{
+	if (is_leaf)
+		ExpandTree();
+	variety_score[method].is_leaf = false;
+	for (auto node= children.begin(); node != children.end(); node++)
+	{
+		node->PlayOutAndUpdate(coeff, method);
+	}
+	UpdateCurrentScore(method);
 	return true;
 }
 
 void ScoreTestPriorityMonteCarloBase::GameTreeNode::PlayOutAndUpdate(double coeff, ScoreMethod method)
 {
-	if (is_leaf)
+	if (variety_score[method].is_leaf)
 	{
-		times++;
-		score += CalcScore(PlayOut(b, rest, is_my_turn));
-		for (int i = 0; i < SCORE_METHOD_END; i++)
+		variety_score[method].times++;
+		if (variety_score[method].times > playout_results.size())
 		{
-			variety_score[i].total_score = score / (double)times;
-			variety_score[i].total_times = times;
+			PlayOutResult result;
+			result.score = CalcScore(PlayOut(b, rest, is_my_turn));
+			result.score_total = result.score + 
+				(playout_results.size() == 0 ? 0 : playout_results.back().score_total);
+			playout_results.push_back(result);
 		}
+		variety_score[method].total_times = variety_score[method].times;
+		variety_score[method].total_score = playout_results[variety_score[method].times - 1].score_total / (double)variety_score[method].times;
 		return;
 	}
 	// not leaf
@@ -171,25 +233,29 @@ void ScoreTestPriorityMonteCarloBase::GameTreeNode::PlayOutAndUpdate(double coef
 		}
 	}
 	bestnode->PlayOutAndUpdate(coeff, method);
-	UpdateCurrentScore();
+	UpdateCurrentScore(method);
 }
 
 void ScoreTestPriorityMonteCarloBase::GameTreeNode::PlayOutAndUpdateWithExpansion(double coeff, int num_to_expand, ScoreMethod method)
 {
-	if (is_leaf)
+	if (variety_score[method].is_leaf)
 	{
-		times++;
-		score += CalcScore(PlayOut(b, rest, is_my_turn));
-		if ((times >= num_to_expand)&& !rest.empty())
+		variety_score[method].times++;
+		if (variety_score[method].times > playout_results.size())
 		{
-			if (ExpandTree())
+			PlayOutResult result;
+			result.score = CalcScore(PlayOut(b, rest, is_my_turn));
+			result.score_total = result.score +
+				(playout_results.size() == 0 ? 0 : playout_results.back().score_total);
+			playout_results.push_back(result);
+		}
+		if ((variety_score[method].times >= num_to_expand)&& !rest.empty())
+		{
+			if (ExpandTree(coeff, method))
 				return;
 		}
-		for (int i = 0; i < SCORE_METHOD_END; i++)
-		{
-			variety_score[i].total_score = score / (double)times;
-			variety_score[i].total_times = times;
-		}
+		variety_score[method].total_times = variety_score[method].times;
+		variety_score[method].total_score = playout_results[variety_score[method].times -1 ].score_total / (double)variety_score[method].times;
 		return;
 	}
 	// not leaf
@@ -209,10 +275,10 @@ void ScoreTestPriorityMonteCarloBase::GameTreeNode::PlayOutAndUpdateWithExpansio
 		}
 	}
 	bestnode->PlayOutAndUpdateWithExpansion(coeff, num_to_expand, method);
-	UpdateCurrentScore();
+	UpdateCurrentScore(method);
 }
 
-void ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScore()
+void ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScore(ScoreMethod method)
 {
 	typedef void (ScoreTestPriorityMonteCarloBase::GameTreeNode::*MemFuncs)();
 	static MemFuncs funcs[] =
@@ -221,15 +287,15 @@ void ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScore()
 		&ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxTotalAve,
 		0
 	};
-	for (int i = 0; funcs[i] != 0; i++)
-	{
-		(this->*funcs[i])();
-	}
+	(this->*funcs[method])();
 }
 
 void ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverageMax()
 {
 	static const ScoreMethod method = SCORE_METHOD_AVE_MAX;
+	int local_times = variety_score[method].times;
+	int local_score_total = (local_times == 0 ? 0 : playout_results[local_times - 1].score_total);
+
 	variety_score[method].subtree_times = 0;
 	variety_score[method].subtree_score = is_my_turn ? CalcScore(-64) : CalcScore(64);
 	for (auto node = children.begin(); node != children.end(); node++)
@@ -240,12 +306,15 @@ void ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverage
 		else
 			variety_score[method].subtree_score = std::min(variety_score[method].subtree_score, node->variety_score[method].total_score);
 	}
-	variety_score[method].total_times = variety_score[method].subtree_times + times;
-	variety_score[method].total_score = score / (double)variety_score[method].total_times + variety_score[method].subtree_score * variety_score[method].subtree_times / (double)variety_score[method].total_times;
+	variety_score[method].total_times = variety_score[method].subtree_times + local_times;
+	variety_score[method].total_score = local_score_total / (double)variety_score[method].total_times + variety_score[method].subtree_score * variety_score[method].subtree_times / (double)variety_score[method].total_times;
 }
 void ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxTotalAve()
 {
 	static const ScoreMethod method = SCORE_METHOD_TOTAL_AVE;
+	int local_times = variety_score[method].times;
+	int local_score_total = (local_times == 0 ? 0 : playout_results[local_times - 1].score_total);
+
 	variety_score[method].subtree_times = 0;
 	double subtree_total = 0;
 	for (auto node = children.begin(); node != children.end(); node++)
@@ -254,8 +323,8 @@ void ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxTotalAv
 		subtree_total += node->variety_score[method].total_score * node->variety_score[method].total_times;
 	}
 	variety_score[method].subtree_score = subtree_total/ variety_score[method].subtree_times;
-	variety_score[method].total_times = variety_score[method].subtree_times + times;
-	variety_score[method].total_score = (score + subtree_total) / (double)variety_score[method].total_times;
+	variety_score[method].total_times = variety_score[method].subtree_times + local_times;
+	variety_score[method].total_score = (local_score_total + subtree_total) / (double)variety_score[method].total_times;
 }
 
 const char* ScoreTestPriorityMonteCarloBase::GameTreeNode::GetMethodName(ScoreMethod m)
@@ -277,9 +346,11 @@ void ScoreTestPriorityMonteCarloBase::GameTreeNode::DebugPrint(FILE* f, int inde
 		'a' + m.GetX(), '1' + m.GetY());
 	for (int m = 0; m < SCORE_METHOD_END; m++)
 	{
-		fprintf(f, "%s %s:%7.4f (%5d times, node [%4d / %4d] subtree [ ave %7.4f (%d)])\n"
-			, space + s_len - indent, GetMethodName(ScoreMethod(m))
-			, variety_score[m].total_score, variety_score[m].total_times, score, times, variety_score[m].subtree_score, variety_score[m].subtree_times);
+		int local_times = variety_score[m].times;
+		int local_score = (local_times <= 0 ? 0 : playout_results[local_times - 1].score_total);
+		fprintf(f, "%s %s[%c]:%7.4f (%5d times, node [%4d / %4d] subtree [ ave %7.4f (%d)])\n"
+			, space + s_len - indent, GetMethodName(ScoreMethod(m)), variety_score[m].is_leaf ? 'L': 'N'
+			, variety_score[m].total_score, variety_score[m].total_times, local_score, local_times, variety_score[m].subtree_score, variety_score[m].subtree_times);
 	}
 	PrintBoard(b, f, indent);
 	for (auto i = children.begin(); i != children.end(); i++)
