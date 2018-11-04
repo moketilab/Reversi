@@ -285,6 +285,7 @@ void ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScore(ScoreMeth
 	{
 		&ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverageMax,
 		&ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxTotalAve,
+		&ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverageMaxSubSD,
 		0
 	};
 	(this->*funcs[method])();
@@ -326,6 +327,33 @@ void ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxTotalAv
 	variety_score[method].total_times = variety_score[method].subtree_times + local_times;
 	variety_score[method].total_score = (local_score_total + subtree_total) / (double)variety_score[method].total_times;
 }
+void ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverageMaxSubSD()
+{
+	static const ScoreMethod method = SCORE_METHOD_AVE_MAX_SD;
+	int local_times = variety_score[method].times;
+	int local_score_total = (local_times == 0 ? 0 : playout_results[local_times - 1].score_total);
+
+	variety_score[method].subtree_times = 0;
+	variety_score[method].subtree_score = is_my_turn ? CalcScore(-64) : CalcScore(64);
+	for (auto node = children.begin(); node != children.end(); node++)
+	{
+		variety_score[method].subtree_times += node->variety_score[method].total_times;
+		if (is_my_turn)
+			variety_score[method].subtree_score = std::max(
+				variety_score[method].subtree_score
+				, node->variety_score[method].total_score
+				- 1.0 / sqrt(node->variety_score[method].total_times)
+			);
+		else
+			variety_score[method].subtree_score = std::min(
+				variety_score[method].subtree_score
+				, node->variety_score[method].total_score
+				+ 1.0 / sqrt(node->variety_score[method].total_times)
+			);
+	}
+	variety_score[method].total_times = variety_score[method].subtree_times + local_times;
+	variety_score[method].total_score = local_score_total / (double)variety_score[method].total_times + variety_score[method].subtree_score * variety_score[method].subtree_times / (double)variety_score[method].total_times;
+}
 
 const char* ScoreTestPriorityMonteCarloBase::GameTreeNode::GetMethodName(ScoreMethod m)
 {
@@ -333,6 +361,7 @@ const char* ScoreTestPriorityMonteCarloBase::GameTreeNode::GetMethodName(ScoreMe
 	{
 		"MAX",
 		"AVE",
+		"SMAX",
 		0
 	};
 	return name[m];
