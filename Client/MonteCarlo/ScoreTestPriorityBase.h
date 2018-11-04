@@ -12,6 +12,7 @@ public:
 		SCORE_METHOD_AVE_MAX,
 		SCORE_METHOD_TOTAL_AVE,
 		SCORE_METHOD_AVE_MAX_SD,
+		SCORE_METHOD_AVE_MAX_GSD,
 		SCORE_METHOD_END
 	};
 protected:
@@ -62,6 +63,7 @@ protected:
 		void UpdateCurrentScoreAuxAverageMax();
 		void UpdateCurrentScoreAuxTotalAve();
 		void UpdateCurrentScoreAuxAverageMaxSubSD();
+		void UpdateCurrentScoreAuxAverageMaxSubGroupSD();
 		const char* GetMethodName(ScoreMethod m);
 	public:
 		void DebugPrint(FILE* f, int indent = 0);

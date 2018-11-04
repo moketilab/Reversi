@@ -286,6 +286,7 @@ void ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScore(ScoreMeth
 		&ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverageMax,
 		&ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxTotalAve,
 		&ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverageMaxSubSD,
+		&ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverageMaxSubGroupSD,
 		0
 	};
 	(this->*funcs[method])();
@@ -334,26 +335,52 @@ void ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverage
 	int local_score_total = (local_times == 0 ? 0 : playout_results[local_times - 1].score_total);
 
 	variety_score[method].subtree_times = 0;
-	variety_score[method].subtree_score = is_my_turn ? CalcScore(-64) : CalcScore(64);
+	variety_score[method].subtree_score = is_my_turn ? CalcScore(-64) : -CalcScore(64);
+	double coeff = is_my_turn ? 1.0 : -1.0;
 	for (auto node = children.begin(); node != children.end(); node++)
 	{
 		variety_score[method].subtree_times += node->variety_score[method].total_times;
-		if (is_my_turn)
-			variety_score[method].subtree_score = std::max(
-				variety_score[method].subtree_score
-				, node->variety_score[method].total_score
-				- 1.0 / sqrt(node->variety_score[method].total_times)
-			);
-		else
-			variety_score[method].subtree_score = std::min(
-				variety_score[method].subtree_score
-				, node->variety_score[method].total_score
-				+ 1.0 / sqrt(node->variety_score[method].total_times)
-			);
+		variety_score[method].subtree_score = std::max(
+			variety_score[method].subtree_score
+			, coeff * node->variety_score[method].total_score
+			- 1.0 / sqrt(node->variety_score[method].total_times)
+		);
 	}
+	variety_score[method].subtree_score *= coeff;
 	variety_score[method].total_times = variety_score[method].subtree_times + local_times;
 	variety_score[method].total_score = local_score_total / (double)variety_score[method].total_times + variety_score[method].subtree_score * variety_score[method].subtree_times / (double)variety_score[method].total_times;
 }
+void ScoreTestPriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverageMaxSubGroupSD()
+{
+	static const ScoreMethod method = SCORE_METHOD_AVE_MAX_GSD;
+	int local_times = variety_score[method].times;
+	int local_score_total = (local_times == 0 ? 0 : playout_results[local_times - 1].score_total);
+
+	variety_score[method].subtree_times = 0;
+	variety_score[method].subtree_score = is_my_turn ? CalcScore(-64) : -CalcScore(64);
+	double coeff = is_my_turn ? 1.0 : -1.0;
+
+	std::vector<int> idx;
+	for (int i = 0; i < children.size(); i++)
+		idx.push_back(i);
+	std::sort(idx.begin(), idx.end(), [=](int a, int b) {return coeff * children[a].variety_score[method].total_score > coeff * children[b].variety_score[method].total_score; });
+	
+	double total = 0.0;
+	for (auto i= idx.begin();i!= idx.end(); i++)
+	{
+		variety_score[method].subtree_times += children[*i].variety_score[method].total_times;
+		total += children[*i].variety_score[method].total_score * children[*i].variety_score[method].total_times;
+		variety_score[method].subtree_score = std::max(
+			variety_score[method].subtree_score
+			, coeff * total / variety_score[method].subtree_times
+			- 1.0 / sqrt(variety_score[method].subtree_times)
+		);
+	}
+	variety_score[method].subtree_score *= coeff;
+	variety_score[method].total_times = variety_score[method].subtree_times + local_times;
+	variety_score[method].total_score = local_score_total / (double)variety_score[method].total_times + variety_score[method].subtree_score * variety_score[method].subtree_times / (double)variety_score[method].total_times;
+}
+
 
 const char* ScoreTestPriorityMonteCarloBase::GameTreeNode::GetMethodName(ScoreMethod m)
 {
@@ -362,6 +389,7 @@ const char* ScoreTestPriorityMonteCarloBase::GameTreeNode::GetMethodName(ScoreMe
 		"MAX",
 		"AVE",
 		"SMAX",
+		"GSMX",
 		0
 	};
 	return name[m];
@@ -375,11 +403,42 @@ void ScoreTestPriorityMonteCarloBase::GameTreeNode::DebugPrint(FILE* f, int inde
 		'a' + m.GetX(), '1' + m.GetY());
 	for (int m = 0; m < SCORE_METHOD_END; m++)
 	{
+		Reversi::Move m_best(0,0);
+		if (!variety_score[m].is_leaf)
+		{
+			auto best = children.begin();
+			auto i = best;
+			for (i++; i != children.end(); i++)
+			{
+				if (is_my_turn)
+				{
+					if (best->variety_score[m].total_score < i->variety_score[m].total_score)
+						best = i;
+				}
+				else
+					if (best->variety_score[m].total_score > i->variety_score[m].total_score)
+						best = i;
+			}
+			m_best = best->m;
+		}
 		int local_times = variety_score[m].times;
 		int local_score = (local_times <= 0 ? 0 : playout_results[local_times - 1].score_total);
-		fprintf(f, "%s %s[%c]:%7.4f (%5d times, node [%4d / %4d] subtree [ ave %7.4f (%d)])\n"
-			, space + s_len - indent, GetMethodName(ScoreMethod(m)), variety_score[m].is_leaf ? 'L': 'N'
+		fprintf(f, "%s %5s[%c]:best[%c%c]:%7.4f (%5d times, node [%4d / %4d] subtree [ ave %7.4f (%d)]) \n"
+			, space + s_len - indent, GetMethodName(ScoreMethod(m)), variety_score[m].is_leaf ? 'L' : 'N'
+			, variety_score[m].is_leaf ? '-' : ('a' + m_best.GetX())
+			, variety_score[m].is_leaf ? '-' : ('1' + m_best.GetY())
 			, variety_score[m].total_score, variety_score[m].total_times, local_score, local_times, variety_score[m].subtree_score, variety_score[m].subtree_times);
+		if (!variety_score[m].is_leaf)
+		{
+			
+			for (auto i = children.begin(); i != children.end(); i++)
+			{
+				fprintf(f, "%s:    [%c%c]:%7.4f (%5d times)\n"
+					, space + s_len - indent - 9
+					, 'a' + i->m.GetX(), '1' + i->m.GetY()
+					, i->variety_score[m].total_score, i->variety_score[m].total_times);
+			}
+		}
 	}
 	PrintBoard(b, f, indent);
 	for (auto i = children.begin(); i != children.end(); i++)
