@@ -39,10 +39,10 @@ Reversi::Move ScoreTestPriorityDynamicExpandMonteCarlo::GetMove(Reversi::Board b
 
 	GameTreeNode node = GameTreeNode::BuildTree(b, rest, 1);
 #ifdef DBG_FILEOUT
-	Reversi::Move move = node.PlayOutNWithExpansion(sample_num, CalcScore(64) - CalcScore(-64), expand_num, SCORE_METHOD_AVE_MAX, sf);
+	Reversi::Move move = node.PlayOutNWithExpansion(sample_num, CalcScore(64) - CalcScore(-64), expand_num, SCORE_METHOD_AVE_MAX_GSD, sf);
 	node.DebugPrint(df);
 #else
-	Reversi::Move move = node.PlayOutNWithExpansion(sample_num, CalcScore(64) - CalcScore(-64), expand_num, SCORE_METHOD_AVE_MAX);
+	Reversi::Move move = node.PlayOutNWithExpansion(sample_num, CalcScore(64) - CalcScore(-64), expand_num, SCORE_METHOD_AVE_MAX_GSD);
 #endif
 	UpdateRest(move);
 	return move;
