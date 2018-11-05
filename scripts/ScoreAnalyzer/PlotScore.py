@@ -12,6 +12,7 @@ import re
 argp = argparse.ArgumentParser(description="Plot Score File")
 argp.add_argument("ifile", metavar = 'InputPath',type = str)
 argp.add_argument("-r", metavar = 'range',type = int , nargs=2, default = (0, 0))
+argp.add_argument("-nm", metavar = 'No plot method',type = str , nargs='+', default = [])
 args = argp.parse_args()
 
 data = np.genfromtxt(args.ifile, delimiter =',', skip_header = 10, names=True)
@@ -19,6 +20,9 @@ data = np.genfromtxt(args.ifile, delimiter =',', skip_header = 10, names=True)
 names = data.dtype.names
 if data[names[-1]][0] != data[names[-1]][0]:
 	names = names[:-1]
+
+for nm in args.nm:
+	names = [x for x in names if not re.search('_' + nm + '$', x)];
 
 prange=[args.r[0],args.r[1]]
 if(prange[0] < 0):
