@@ -139,7 +139,6 @@ ScoreTestPriorityMonteCarloBase::GameTreeNode ScoreTestPriorityMonteCarloBase::G
 		rv.children.push_back(node);
 	}
 	rv.is_leaf = false;
-//	rv.UpdateCurrentScore();
 	for (int i = 0; i < SCORE_METHOD_END; i++)
 	{
 		rv.UpdateCurrentScore(ScoreMethod(i));

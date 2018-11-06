@@ -29,8 +29,6 @@ protected:
 		const bool                is_my_turn;
 		bool                      is_leaf;
 		std::vector<PlayOutResult> playout_results;
-//		int                       times;
-//		int                       score;
 		struct Score
 		{
 			bool                  is_leaf;
