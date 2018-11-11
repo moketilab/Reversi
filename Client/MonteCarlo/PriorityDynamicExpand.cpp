@@ -36,7 +36,7 @@ Reversi::Move PriorityDynamicExpandMonteCarlo::GetMove(Reversi::Board b, std::ve
 {
 	VecMove rest = UpdateRest(moves);
 
-	GameTreeNode node = GameTreeNode::BuildTree(b, rest, 1);
+	GameTreeNode node = GameTreeNode::BuildTree(b, rest, 1, SCORE_METHOD_DEFAULT);
 	Reversi::Move move = node.PlayOutNWithExpansion(sample_num, CalcScore(64) - CalcScore(-64), expand_num);
 #ifdef DBG_FILEOUT
 	node.DebugPrint(df);

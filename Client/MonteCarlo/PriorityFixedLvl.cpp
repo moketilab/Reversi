@@ -35,7 +35,7 @@ Reversi::Move PriorityFixedLvlMonteCarlo::GetMove(Reversi::Board b, std::vector<
 {
 	VecMove rest = UpdateRest(moves);
 
-	GameTreeNode node = GameTreeNode::BuildTree(b, rest, tree_depth);
+	GameTreeNode node = GameTreeNode::BuildTree(b, rest, tree_depth, SCORE_METHOD_DEFAULT);
 	Reversi::Move move = node.PlayOutN(sample_num, CalcScore(64) - CalcScore(-64));
 #ifdef DBG_FILEOUT
 	node.DebugPrint(df);
