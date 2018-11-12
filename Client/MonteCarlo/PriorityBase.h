@@ -60,10 +60,10 @@ protected:
 		void UpdateCurrentScoreAuxTotalAve();
 		void UpdateCurrentScoreAuxAverageMaxSubSD();
 		void UpdateCurrentScoreAuxAverageMaxSubGroupSD();
-
 	public:
 		void DebugPrint(FILE* f, int indent = 0);
 	};
 protected:
 	PriorityMonteCarloBase(const std::string& name):MonteCarloBase(name) {}
+	static std::string GetScoreMthodName(ScoreMethod m);
 };

@@ -16,11 +16,12 @@ namespace {
 }
 #endif
 
-PriorityDynamicExpandMonteCarlo::PriorityDynamicExpandMonteCarlo(int sample, int num_to_expand)
+PriorityDynamicExpandMonteCarlo::PriorityDynamicExpandMonteCarlo(int sample, int num_to_expand, ScoreMethod score_method)
 	: PriorityMonteCarloBase("C++ Monte Carlo with dynamic tree expand over " + std::to_string(num_to_expand)
-		+ " times (" + std::to_string(sample) + " samples)")
+		+ " times (" + std::to_string(sample) + " samples) (" + GetScoreMthodName(score_method) +")")
 	, sample_num(sample)
 	, expand_num(num_to_expand)
+	, method(score_method)
 {
 }
 void PriorityDynamicExpandMonteCarlo::GameStart(Reversi::Board b)
@@ -36,7 +37,7 @@ Reversi::Move PriorityDynamicExpandMonteCarlo::GetMove(Reversi::Board b, std::ve
 {
 	VecMove rest = UpdateRest(moves);
 
-	GameTreeNode node = GameTreeNode::BuildTree(b, rest, 1, SCORE_METHOD_DEFAULT);
+	GameTreeNode node = GameTreeNode::BuildTree(b, rest, 1, method);
 	Reversi::Move move = node.PlayOutNWithExpansion(sample_num, CalcScore(64) - CalcScore(-64), expand_num);
 #ifdef DBG_FILEOUT
 	node.DebugPrint(df);

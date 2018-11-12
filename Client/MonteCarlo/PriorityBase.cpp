@@ -284,3 +284,19 @@ void PriorityMonteCarloBase::GameTreeNode::DebugPrint(FILE* f, int indent)
 	}
 }
 
+/*******************
+ AUX function
+*******************/
+std::string PriorityMonteCarloBase::GetScoreMthodName(ScoreMethod m)
+{
+	static const std::string name[SCORE_METHOD_END] =
+	{
+		"MAX",
+		"AVERAGE",
+		"MAX - SD",
+		"MAX -Group SD",
+	};
+	if ((m < 0) || (SCORE_METHOD_END <= m))
+		return "Illigal Score method ID";
+	return  name[m];
+}
