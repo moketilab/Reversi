@@ -5,6 +5,14 @@
 #include <algorithm>
 #include <assert.h>
 
+void (PriorityMonteCarloBase::GameTreeNode::*(PriorityMonteCarloBase::GameTreeNode::socre_funcs)[PriorityMonteCarloBase::SCORE_METHOD_END])() =
+{
+	&PriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverageMax,
+	&PriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxTotalAve,
+	&PriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverageMaxSubSD,
+	&PriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverageMaxSubGroupSD,
+};
+
 Reversi::Move PriorityMonteCarloBase::GameTreeNode::PlayOutN(int n, double coeff)
 {
 	while (total_times < n)
@@ -45,16 +53,16 @@ Reversi::Move PriorityMonteCarloBase::GameTreeNode::PlayOutNWithExpansion(int n,
 	return bestnode->m;
 }
 
-PriorityMonteCarloBase::GameTreeNode PriorityMonteCarloBase::GameTreeNode::BuildTree(Reversi::Board board, VecMove rest, int depth)
+PriorityMonteCarloBase::GameTreeNode PriorityMonteCarloBase::GameTreeNode::BuildTree(Reversi::Board board, VecMove rest, int depth, ScoreMethod score_method)
 {
-	GameTreeNode rv(Reversi::Move(0,0), board, rest, true);
+	GameTreeNode rv(Reversi::Move(0,0), board, rest, true, score_method);
 	VecMove legal_moves = FindMoveList(board, rest);
 	depth = depth - 1;
 	if (legal_moves.size() == 1)
 		depth = 0;
 	for (auto i = legal_moves.begin(); i != legal_moves.end(); i++)
 	{
-		GameTreeNode node = BuildTree(*i, board, rest, depth, true);
+		GameTreeNode node = BuildTree(*i, board, rest, depth, true, score_method);
 		rv.children.push_back(node);
 	}
 	rv.is_leaf = false;
@@ -62,7 +70,7 @@ PriorityMonteCarloBase::GameTreeNode PriorityMonteCarloBase::GameTreeNode::Build
 	return rv;
 }
 
-PriorityMonteCarloBase::GameTreeNode PriorityMonteCarloBase::GameTreeNode::BuildTree(Reversi::Move m, Reversi::Board b, VecMove rest, int depth, bool my_turn)
+PriorityMonteCarloBase::GameTreeNode PriorityMonteCarloBase::GameTreeNode::BuildTree(Reversi::Move m, Reversi::Board b, VecMove rest, int depth, bool my_turn, ScoreMethod score_method)
 {
 	b.MovePlayer(m, my_turn);
 	rest.erase(std::find(rest.begin(), rest.end(), m));
@@ -75,7 +83,7 @@ PriorityMonteCarloBase::GameTreeNode PriorityMonteCarloBase::GameTreeNode::Build
 		if (legal_moves.size() == 0)
 		{
 			rest.clear();
-			GameTreeNode rv(m, b, rest, my_turn);
+			GameTreeNode rv(m, b, rest, my_turn, score_method);
 			rv.is_leaf = true;
 			rv.times = 1;
 			rv.score = CalcScore(b.Score());
@@ -86,7 +94,7 @@ PriorityMonteCarloBase::GameTreeNode PriorityMonteCarloBase::GameTreeNode::Build
 	}
 	if (depth <= 0)
 	{
-		GameTreeNode rv(m, b, rest, my_turn);
+		GameTreeNode rv(m, b, rest, my_turn, score_method);
 		rv.is_leaf = true;
 		rv.times = 1;
 		rv.score = CalcScore(PlayOut(b,rest,my_turn));
@@ -94,10 +102,10 @@ PriorityMonteCarloBase::GameTreeNode PriorityMonteCarloBase::GameTreeNode::Build
 		rv.total_times = rv.times;
 		return rv;
 	}
-	GameTreeNode rv(m, b, rest, my_turn);
+	GameTreeNode rv(m, b, rest, my_turn, score_method);
 	for (auto i = legal_moves.begin(); i != legal_moves.end(); i++)
 	{
-		GameTreeNode node = BuildTree(*i, b, rest, depth - 1, my_turn);
+		GameTreeNode node = BuildTree(*i, b, rest, depth - 1, my_turn, score_method);
 		rv.children.push_back(node);
 	}
 	rv.is_leaf = false;
@@ -111,7 +119,7 @@ bool PriorityMonteCarloBase::GameTreeNode::ExpandTree()
 	assert(legal_moves.size() > 0);
 	for (auto i = legal_moves.begin(); i != legal_moves.end(); i++)
 	{
-		GameTreeNode node = BuildTree(*i, b, rest, 0, is_my_turn);
+		GameTreeNode node = BuildTree(*i, b, rest, 0, is_my_turn, score_method);
 		children.push_back(node);
 	}
 	is_leaf = false;
@@ -184,7 +192,10 @@ void PriorityMonteCarloBase::GameTreeNode::PlayOutAndUpdateWithExpansion(double 
 	UpdateCurrentScore();
 }
 
-void PriorityMonteCarloBase::GameTreeNode::UpdateCurrentScore()
+/*******************
+ Scoring methods
+*******************/
+void PriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverageMax()
 {
 	subtree_times = 0;
 	subtree_score = is_my_turn ? CalcScore(-64) : CalcScore(64);
@@ -200,6 +211,64 @@ void PriorityMonteCarloBase::GameTreeNode::UpdateCurrentScore()
 	total_score = score / (double)total_times + subtree_score * subtree_times / (double)total_times;
 }
 
+void PriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxTotalAve()
+{
+	subtree_times = 0;
+	double subtree_total = 0;
+	for (auto node = children.begin(); node != children.end(); node++)
+	{
+		subtree_times += node->total_times;
+		subtree_total += node->total_score * node->total_times;
+	}
+	subtree_score = subtree_total / subtree_times;
+	total_times = subtree_times + times;
+	total_score = (score + subtree_total) / (double)total_times;
+}
+
+void PriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverageMaxSubSD()
+{
+	subtree_times = 0;
+	subtree_score = is_my_turn ? CalcScore(-64) : -CalcScore(64);
+	double coeff = is_my_turn ? 1.0 : -1.0;
+	for (auto node = children.begin(); node != children.end(); node++)
+	{
+		subtree_times += node->total_times;
+		subtree_score = std::max(subtree_score
+			, coeff * node->total_score	- 1.0 / sqrt(node->total_times));
+	}
+	subtree_score *= coeff;
+	total_times = subtree_times + times;
+	total_score = (score + subtree_score * subtree_times) / (double)total_times;
+}
+
+void PriorityMonteCarloBase::GameTreeNode::UpdateCurrentScoreAuxAverageMaxSubGroupSD()
+{
+	subtree_times = 0;
+	subtree_score = is_my_turn ? CalcScore(-64) : -CalcScore(64);
+	double coeff = is_my_turn ? 1.0 : -1.0;
+
+	std::vector<int> idx;
+	for (int i = 0; i < children.size(); i++)
+		idx.push_back(i);
+	std::sort(idx.begin(), idx.end(), [=](int a, int b) {return coeff * children[a].total_score > coeff * children[b].total_score; });
+
+	double total = 0.0;
+	for (auto i = idx.begin(); i != idx.end(); i++)
+	{
+		subtree_times += children[*i].total_times;
+		total += children[*i].total_score * children[*i].total_times;
+		subtree_score = std::max(subtree_score
+			, coeff * total / subtree_times	- 1.0 / sqrt(subtree_times)
+		);
+	}
+	subtree_score *= coeff;
+	total_times = subtree_times + times;
+	total_score = (score + subtree_score * subtree_times) / (double)total_times;
+}
+
+/*******************
+ Debug functions
+*******************/
 void PriorityMonteCarloBase::GameTreeNode::DebugPrint(FILE* f, int indent)
 {
 	static const char space[] = "                                              ";
@@ -215,3 +284,19 @@ void PriorityMonteCarloBase::GameTreeNode::DebugPrint(FILE* f, int indent)
 	}
 }
 
+/*******************
+ AUX function
+*******************/
+std::string PriorityMonteCarloBase::GetScoreMthodName(ScoreMethod m)
+{
+	static const std::string name[SCORE_METHOD_END] =
+	{
+		"MAX",
+		"AVERAGE",
+		"MAX - SD",
+		"MAX -Group SD",
+	};
+	if ((m < 0) || (SCORE_METHOD_END <= m))
+		return "Illigal Score method ID";
+	return  name[m];
+}

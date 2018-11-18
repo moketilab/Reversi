@@ -5,8 +5,24 @@
 
 #include <string>
 #include <stdio.h>
+#include <vector>
 
-PlayerBase* CreatePlayer(int sample, const std::string player)
+typedef std::vector<std::string> StrVec;
+
+PriorityMonteCarloBase::ScoreMethod ScoreMethodByName(const std::string& s)
+{
+	if (s == "MAX")
+		return PriorityMonteCarloBase::ScoreMethod::SCORE_METHOD_AVE_MAX;
+	if(s == "SMAX")
+		return PriorityMonteCarloBase::ScoreMethod::SCORE_METHOD_AVE_MAX_SD;
+	if (s == "GSMAX")
+		return PriorityMonteCarloBase::ScoreMethod::SCORE_METHOD_AVE_MAX_GSD;
+	if(s == "AVE")
+		return PriorityMonteCarloBase::ScoreMethod::SCORE_METHOD_TOTAL_AVE;
+	return PriorityMonteCarloBase::ScoreMethod::SCORE_METHOD_DEFAULT;
+}
+
+PlayerBase* CreatePlayer(int sample, const std::string player, StrVec others)
 {
 	if (player == std::string("simple"))
 	{
@@ -24,7 +40,9 @@ PlayerBase* CreatePlayer(int sample, const std::string player)
 		int num_to_expand = atoi(player.substr(3).c_str());
 		if (num_to_expand < 2)
 			num_to_expand = 2;
-		return new PriorityDynamicExpandMonteCarlo(sample, num_to_expand);
+		PriorityMonteCarloBase::ScoreMethod method =
+			ScoreMethodByName((others.size() > 0) ? others[0] : "");
+		return new PriorityDynamicExpandMonteCarlo(sample, num_to_expand, method);
 	}
 	if (player.substr(0, 3) == std::string("STD"))
 	{
@@ -47,7 +65,10 @@ int main(int argc, char** argv)
 	std::string pname = "";
 	if (argc > 2)
 		pname = argv[2];
-	PlayerBase* player = CreatePlayer(sample, pname);
+	StrVec others;
+	for (int i = 3; i < argc; i++)
+		others.push_back(argv[i]);
+	PlayerBase* player = CreatePlayer(sample, pname, others);
 	int ret = ReversiPlayerStdioClient(player).StartClient();
 	delete player;
 	return ret;
